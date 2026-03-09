@@ -12,6 +12,9 @@
   "dependencies": {
     "@aws-amplify/backend": "^1.21.0",
     "@aws-amplify/ui-react": "^6.15.1",
+    "@aws-sdk/client-dynamodb": "^3.1004.0",
+    "@aws-sdk/client-s3": "^3.1004.0",
+    "@types/aws-lambda": "^8.10.161",
     "aws-amplify": "^6.16.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

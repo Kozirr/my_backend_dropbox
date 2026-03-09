@@ -1,17 +1,6 @@
-import * as fs from "fs";
-import * as path from "path";
-import { Runtime, Code, Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
-import { Construct } from "constructs";
+import { defineFunction } from "@aws-amplify/backend";
 
-export function createOnRenameFileFunction(scope: Construct, id: string) {
-  const handlerCode = fs.readFileSync(
-    path.join(__dirname, "handler", "handler.py"),
-    "utf-8"
-  );
-  return new LambdaFunction(scope, id, {
-    runtime: Runtime.PYTHON_3_12,
-    handler: "index.handler",
-    code: Code.fromInline(handlerCode),
-    functionName: `onRenameFile-${id}`,
-  });
-}
+export const onRenameFile = defineFunction({
+  name: "onRenameFile",
+  entry: "./handler.ts",
+});

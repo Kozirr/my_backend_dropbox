@@ -2,8 +2,8 @@ import { defineBackend } from "@aws-amplify/backend";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { storage } from "./storage/resource";
-import { createOnDeleteRecordFunction } from "./functions/onDeleteRecord/resource";
-import { createOnRenameFileFunction } from "./functions/onRenameFile/resource";
+import { onDeleteRecord } from "./functions/onDeleteRecord/resource";
+import { onRenameFile } from "./functions/onRenameFile/resource";
 import { StartingPosition, EventSourceMapping } from "aws-cdk-lib/aws-lambda";
 import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
@@ -11,12 +11,9 @@ const backend = defineBackend({
   auth,
   data,
   storage,
+  onDeleteRecord,
+  onRenameFile,
 });
-
-const lambdaStack = backend.createStack("LambdaStack");
-
-const deleteFn = createOnDeleteRecordFunction(lambdaStack, "OnDeleteRecordFn");
-const renameFn = createOnRenameFileFunction(lambdaStack, "OnRenameFileFn");
 
 const s3BucketName = backend.storage.resources.bucket.bucketName;
 
@@ -25,9 +22,14 @@ const fileRecordTable = tables["FileRecord"];
 const tableStreamArn = fileRecordTable.tableStreamArn!;
 const tableName = fileRecordTable.tableName;
 
+const deleteFn = backend.onDeleteRecord.resources.lambda;
+const renameFn = backend.onRenameFile.resources.lambda;
+
 deleteFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
 renameFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
 renameFn.addEnvironment("FILERECORD_TABLE_NAME", tableName);
+
+const lambdaStack = backend.createStack("LambdaPermissions");
 
 deleteFn.role!.attachInlinePolicy(
   new Policy(lambdaStack, "DeleteS3Policy", {
