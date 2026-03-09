@@ -4,6 +4,7 @@ const schema = a.schema({
   FileRecord: a
     .model({
       fileName: a.string().required(),
+      logicalFileId: a.string(),
       s3Key: a.string().required(),
       fileSize: a.integer().required(),
       contentType: a.string().required(),

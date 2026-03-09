@@ -11,7 +11,7 @@ const client = generateClient<Schema>()
 type FileRecord = Schema['FileRecord']['type']
 
 interface FileVersionsProps {
-  fileName: string
+  file: FileRecord
   onClose: () => void
 }
 
@@ -44,7 +44,7 @@ function formatDate(dateStr: string): string {
   })
 }
 
-function FileVersions({ fileName, onClose }: FileVersionsProps) {
+function FileVersions({ file, onClose }: FileVersionsProps) {
   const [versions, setVersions] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -56,12 +56,19 @@ function FileVersions({ fileName, onClose }: FileVersionsProps) {
         const session = await fetchAuthSession()
         const owner = session.tokens?.idToken?.payload?.sub as string
 
-        const { data } = await client.models.FileRecord.list({
-          filter: {
-            fileName: { eq: fileName },
-            owner: { eq: owner },
-          },
-        })
+        const { data } = file.logicalFileId
+          ? await client.models.FileRecord.list({
+              filter: {
+                logicalFileId: { eq: file.logicalFileId },
+                owner: { eq: owner },
+              },
+            })
+          : await client.models.FileRecord.list({
+              filter: {
+                fileName: { eq: file.fileName },
+                owner: { eq: owner },
+              },
+            })
 
         const sorted = data.sort((a, b) => b.version - a.version)
         setVersions(sorted)
@@ -73,7 +80,7 @@ function FileVersions({ fileName, onClose }: FileVersionsProps) {
       }
     }
     loadVersions()
-  }, [fileName, showToast])
+  }, [file.fileName, file.logicalFileId, showToast])
 
   const handleDownload = useCallback(async (version: FileRecord) => {
     setDownloadingId(version.id)
@@ -95,7 +102,7 @@ function FileVersions({ fileName, onClose }: FileVersionsProps) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Versions of "{fileName}"</h3>
+          <h3>Versions of "{file.fileName}"</h3>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">

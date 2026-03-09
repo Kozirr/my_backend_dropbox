@@ -13,6 +13,28 @@ const client = generateClient<Schema>()
 
 type FileRecord = Schema['FileRecord']['type']
 
+function getGroupKey(file: FileRecord) {
+  return file.logicalFileId ?? `legacy:${file.owner}:${file.fileName}`
+}
+
+async function listVersionsForFile(file: FileRecord, owner: string) {
+  if (file.logicalFileId) {
+    return client.models.FileRecord.list({
+      filter: {
+        logicalFileId: { eq: file.logicalFileId },
+        owner: { eq: owner },
+      },
+    })
+  }
+
+  return client.models.FileRecord.list({
+    filter: {
+      fileName: { eq: file.fileName },
+      owner: { eq: owner },
+    },
+  })
+}
+
 function FileList() {
   const [files, setFiles] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,15 +53,16 @@ function FileList() {
         filter: { owner: { eq: owner } },
       })
 
-      const latestByName = new Map<string, FileRecord>()
+      const latestByGroup = new Map<string, FileRecord>()
       for (const file of data) {
-        const existing = latestByName.get(file.fileName)
+        const groupKey = getGroupKey(file)
+        const existing = latestByGroup.get(groupKey)
         if (!existing || file.version > existing.version) {
-          latestByName.set(file.fileName, file)
+          latestByGroup.set(groupKey, file)
         }
       }
 
-      const sorted = Array.from(latestByName.values()).sort(
+      const sorted = Array.from(latestByGroup.values()).sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
@@ -79,12 +102,7 @@ function FileList() {
       const session = await fetchAuthSession()
       const owner = session.tokens?.idToken?.payload?.sub as string
 
-      const { data: allVersions } = await client.models.FileRecord.list({
-        filter: {
-          fileName: { eq: deleteFile.fileName },
-          owner: { eq: owner },
-        },
-      })
+      const { data: allVersions } = await listVersionsForFile(deleteFile, owner)
 
       await Promise.all(
         allVersions.map((version) => client.models.FileRecord.delete({ id: version.id }))
@@ -109,10 +127,13 @@ function FileList() {
       }
 
       setActionBusy(true)
+      let owner = ''
+      let originalVersions: FileRecord[] = []
 
       try {
         const session = await fetchAuthSession()
-        const owner = session.tokens?.idToken?.payload?.sub as string
+        owner = session.tokens?.idToken?.payload?.sub as string
+        const currentGroupKey = getGroupKey(file)
 
         const [{ data: existingTarget }, { data: allVersions }] = await Promise.all([
           client.models.FileRecord.list({
@@ -121,15 +142,16 @@ function FileList() {
               owner: { eq: owner },
             },
           }),
-          client.models.FileRecord.list({
-            filter: {
-              fileName: { eq: file.fileName },
-              owner: { eq: owner },
-            },
-          }),
+          listVersionsForFile(file, owner),
         ])
 
-        if (existingTarget.length > 0) {
+        originalVersions = allVersions
+
+        const conflictingTarget = existingTarget.find(
+          (targetRecord) => getGroupKey(targetRecord) !== currentGroupKey
+        )
+
+        if (conflictingTarget) {
           showToast(
             `A file named ${trimmedName} already exists. Choose a different name.`,
             'error'
@@ -137,17 +159,19 @@ function FileList() {
           return
         }
 
-        await Promise.all(
-          allVersions.map((version) =>
-            client.models.FileRecord.update({
-              id: version.id,
-              fileName: trimmedName,
-            })
-          )
-        )
+        const logicalFileId =
+          allVersions.find((version) => version.logicalFileId)?.logicalFileId ?? crypto.randomUUID()
 
-        if (versionsFile?.fileName === file.fileName) {
-          setVersionsFile({ ...versionsFile, fileName: trimmedName })
+        for (const version of allVersions) {
+          await client.models.FileRecord.update({
+            id: version.id,
+            fileName: trimmedName,
+            logicalFileId,
+          })
+        }
+
+        if (versionsFile && getGroupKey(versionsFile) === currentGroupKey) {
+          setVersionsFile({ ...versionsFile, fileName: trimmedName, logicalFileId })
         }
 
         setRenameFile(null)
@@ -155,6 +179,26 @@ function FileList() {
         await loadFiles()
       } catch (err) {
         console.error('Rename failed:', err)
+
+        if (owner && originalVersions.length > 0) {
+          const { data: currentVersions } = await listVersionsForFile(file, owner)
+
+          await Promise.all(
+            currentVersions.map((version) => {
+              const originalVersion = originalVersions.find((item) => item.id === version.id)
+              if (!originalVersion) {
+                return Promise.resolve()
+              }
+
+              return client.models.FileRecord.update({
+                id: version.id,
+                fileName: originalVersion.fileName,
+                logicalFileId: originalVersion.logicalFileId ?? undefined,
+              })
+            })
+          )
+        }
+
         showToast('Failed to rename file.', 'error')
       } finally {
         setActionBusy(false)
@@ -210,7 +254,7 @@ function FileList() {
 
       {versionsFile && (
         <FileVersions
-          fileName={versionsFile.fileName}
+          file={versionsFile}
           onClose={() => setVersionsFile(null)}
         />
       )}

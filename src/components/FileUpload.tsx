@@ -8,6 +8,10 @@ import './FileUpload.css'
 
 const client = generateClient<Schema>()
 
+function sortByVersionDesc<T extends { version: number }>(records: T[]) {
+  return [...records].sort((left, right) => right.version - left.version)
+}
+
 function FileUpload() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -31,13 +35,27 @@ function FileUpload() {
         },
       })
 
+      const sortedExistingFiles = sortByVersionDesc(existingFiles)
+      const latestRecord = sortedExistingFiles[0]
       const maxVersion = existingFiles.reduce(
         (max, f) => Math.max(max, f.version),
         0
       )
       const newVersion = maxVersion + 1
+      const logicalFileId = latestRecord?.logicalFileId ?? crypto.randomUUID()
 
-      const s3Path = `private/${identityId}/${file.name}_v${newVersion}`
+      if (existingFiles.length > 0 && !latestRecord?.logicalFileId) {
+        await Promise.all(
+          existingFiles.map((existingFile) =>
+            client.models.FileRecord.update({
+              id: existingFile.id,
+              logicalFileId,
+            })
+          )
+        )
+      }
+
+      const s3Path = `private/${identityId}/${logicalFileId}/v${newVersion}`
 
       await uploadData({
         path: s3Path,
@@ -54,6 +72,7 @@ function FileUpload() {
 
       await client.models.FileRecord.create({
         fileName: file.name,
+        logicalFileId,
         s3Key: s3Path,
         fileSize: file.size,
         contentType: file.type || 'application/octet-stream',
