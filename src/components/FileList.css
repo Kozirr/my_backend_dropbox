@@ -1,0 +1,24 @@
+.file-list {
+  margin-top: 1rem;
+}
+
+.file-list-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #e1e4e8;
+}
+
+.file-list-loading,
+.file-list-empty {
+  color: #8b949e;
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.95rem;
+}
+
+.file-list-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

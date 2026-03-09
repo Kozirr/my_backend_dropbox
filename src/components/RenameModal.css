@@ -1,0 +1,72 @@
+.rename-modal {
+  max-width: 420px;
+}
+
+.rename-form {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rename-label {
+  font-size: 0.85rem;
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.rename-input {
+  width: 100%;
+  padding: 0.6em 0.75em;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #0d1117;
+  color: #e1e4e8;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.rename-input:focus {
+  border-color: #58a6ff;
+}
+
+.rename-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #e1e4e8;
+  padding: 0.5em 1em;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: #21262d;
+}
+
+.btn-rename-submit {
+  background: #238636;
+  border: 1px solid #2ea043;
+  color: #fff;
+  padding: 0.5em 1em;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-rename-submit:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+.btn-rename-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
