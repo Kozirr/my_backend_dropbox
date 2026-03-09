@@ -4,7 +4,7 @@ import { data } from "./data/resource";
 import { storage } from "./storage/resource";
 import { onDeleteRecord } from "./functions/onDeleteRecord/resource";
 import { onRenameFile } from "./functions/onRenameFile/resource";
-import { StartingPosition, EventSourceMapping } from "aws-cdk-lib/aws-lambda";
+import { StartingPosition, EventSourceMapping, Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
 import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 const backend = defineBackend({
@@ -22,8 +22,8 @@ const fileRecordTable = tables["FileRecord"];
 const tableStreamArn = fileRecordTable.tableStreamArn!;
 const tableName = fileRecordTable.tableName;
 
-const deleteFn = backend.onDeleteRecord.resources.lambda;
-const renameFn = backend.onRenameFile.resources.lambda;
+const deleteFn = backend.onDeleteRecord.resources.lambda as LambdaFunction;
+const renameFn = backend.onRenameFile.resources.lambda as LambdaFunction;
 
 deleteFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
 renameFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
