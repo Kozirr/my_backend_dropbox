@@ -6,7 +6,6 @@ import { createOnDeleteRecordFunction } from "./functions/onDeleteRecord/resourc
 import { createOnRenameFileFunction } from "./functions/onRenameFile/resource";
 import { StartingPosition, EventSourceMapping } from "aws-cdk-lib/aws-lambda";
 import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { Stack } from "aws-cdk-lib";
 
 const backend = defineBackend({
   auth,
