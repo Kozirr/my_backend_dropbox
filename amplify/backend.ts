@@ -4,7 +4,7 @@ import { data } from "./data/resource";
 import { storage } from "./storage/resource";
 import { onDeleteRecord } from "./functions/onDeleteRecord/resource";
 import { onRenameFile } from "./functions/onRenameFile/resource";
-import { CfnTable } from "aws-cdk-lib/aws-dynamodb";
+import { StreamViewType } from "aws-cdk-lib/aws-dynamodb";
 import { StartingPosition, EventSourceMapping, Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
 import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
@@ -18,12 +18,11 @@ const backend = defineBackend({
 
 const s3BucketName = backend.storage.resources.bucket.bucketName;
 
-const tables = backend.data.resources.tables;
-const fileRecordTable = tables["FileRecord"];
-const fileRecordCfnTable = fileRecordTable.node.defaultChild as CfnTable;
+const fileRecordTable = backend.data.resources.tables["FileRecord"];
+const fileRecordTableResource = backend.data.resources.cfnResources.amplifyDynamoDbTables["FileRecord"];
 
-fileRecordCfnTable.streamSpecification = {
-  streamViewType: "NEW_AND_OLD_IMAGES",
+fileRecordTableResource.streamSpecification = {
+  streamViewType: StreamViewType.NEW_AND_OLD_IMAGES,
 };
 
 const tableStreamArn = fileRecordTable.tableStreamArn!;
