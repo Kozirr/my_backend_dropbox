@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
-import { getUrl } from 'aws-amplify/storage'
 import type { Schema } from '../../amplify/data/resource'
+import { downloadFile } from '../utils/downloadFile'
+import { useToast } from './ToastProvider'
 import './FileItem.css'
 
 type FileRecord = Schema['FileRecord']['type']
@@ -30,18 +31,19 @@ function formatDate(dateStr: string): string {
 }
 
 function FileItem({ file, onDelete, onRename, onViewVersions }: FileItemProps) {
+  const { showToast } = useToast()
+
   const handleDownload = useCallback(async () => {
     try {
-      const { url } = await getUrl({
+      await downloadFile({
         path: file.s3Key,
-        options: { expiresIn: 3600 },
+        fileName: file.fileName,
       })
-      window.open(url.toString(), '_blank')
     } catch (err) {
       console.error('Download failed:', err)
-      alert('Failed to get download link.')
+      showToast(`Failed to download ${file.fileName}.`, 'error')
     }
-  }, [file.s3Key])
+  }, [file.fileName, file.s3Key, showToast])
 
   return (
     <div className="file-item">

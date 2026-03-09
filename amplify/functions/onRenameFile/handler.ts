@@ -11,7 +11,15 @@ const dynamo = new DynamoDBClient();
 const BUCKET_NAME = process.env.STORAGE_BUCKET_NAME || "";
 const TABLE_NAME = process.env.FILERECORD_TABLE_NAME || "";
 
+function encodeCopySource(bucketName: string, key: string) {
+  return `${bucketName}/${encodeURIComponent(key).replace(/%2F/g, "/")}`;
+}
+
 export const handler: DynamoDBStreamHandler = async (event) => {
+  if (!BUCKET_NAME || !TABLE_NAME) {
+    throw new Error("Missing STORAGE_BUCKET_NAME or FILERECORD_TABLE_NAME");
+  }
+
   for (const record of event.Records) {
     if (record.eventName !== "MODIFY") continue;
 
@@ -34,11 +42,21 @@ export const handler: DynamoDBStreamHandler = async (event) => {
     const newS3Key = `${keyPrefix}/${newFileName}_v${version}`;
     const recordId = newImage?.id?.S || "";
 
+    if (!recordId) {
+      console.log("No record id in new image:", JSON.stringify(newImage));
+      continue;
+    }
+
+    if (newS3Key === oldS3Key) {
+      console.log(`Skipping rename for ${recordId}; S3 key already matches ${newS3Key}`);
+      continue;
+    }
+
     try {
       await s3.send(
         new CopyObjectCommand({
           Bucket: BUCKET_NAME,
-          CopySource: `${BUCKET_NAME}/${oldS3Key}`,
+          CopySource: encodeCopySource(BUCKET_NAME, oldS3Key),
           Key: newS3Key,
         })
       );

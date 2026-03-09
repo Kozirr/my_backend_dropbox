@@ -1,77 +1,63 @@
 # Serverless Dropbox Clone
 
-A Dropbox-like file synchronization service built as a fully serverless application on AWS.
+A serverless file management app built on AWS. Authenticated users can upload files, view version history, rename files, delete files, and download stored versions through a hosted web interface.
 
-## Overview
+## Deployed URL
 
-Users can sign up, upload files, download files, manage file versions, rename and delete files — all backed by a serverless AWS infrastructure that scales automatically and costs nothing on the free tier.
+https://www.meow.theyka.net/
+
+## What Users Can Do
+
+- Sign up and sign in with email-based authentication
+- Upload files to private user storage
+- View current files and past versions
+- Rename files while keeping the full version history grouped together
+- Delete files and their stored objects
+- Download the current file or any saved version directly from the app
+
+## Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite |
+| Backend IaC | AWS Amplify Gen 2 |
+| Authentication | Amazon Cognito |
+| File storage | Amazon S3 |
+| Metadata | Amazon DynamoDB |
+| Background processing | AWS Lambda |
+| Hosting | AWS Amplify Hosting |
+| DNS | Amazon Route 53 |
 
 ## Architecture
 
-- **Frontend**: React + TypeScript (Vite), hosted via AWS Amplify Hosting
-- **Authentication**: Amazon Cognito (email/password sign-up/sign-in with email verification)
-- **File Storage**: Amazon S3 (private per-user paths)
-- **Database**: Amazon DynamoDB (file metadata, version tracking)
-- **Serverless Functions**: AWS Lambda (Python 3.12)
-  - `onDeleteRecord` — triggered by DynamoDB Stream on record deletion, cleans up the corresponding S3 object
-  - `onRenameFile` — triggered by DynamoDB Stream on file name change, replicates the S3 object with the new name and deletes the old one
-- **DNS/Routing**: Amazon Route 53 + Amplify Hosting
+- The frontend is hosted with AWS Amplify Hosting.
+- Authentication is handled by Amazon Cognito.
+- File binaries are stored in Amazon S3.
+- File metadata and version information are stored in Amazon DynamoDB.
+- Lambda functions react to DynamoDB stream events for file-delete and file-rename workflows.
+- Renaming updates every version record for the file, and the rename Lambda keeps the S3 object keys aligned with the new filename.
+- The public domain `www.meow.theyka.net` is configured in Amazon Route 53.
 
-## Features
+Route 53 is part of the deployed architecture, but the DNS records are configured outside this repository. This repository does not provision Route 53 resources directly.
 
-- **User Authentication** — secure sign-up/sign-in with email verification via Cognito
-- **File Upload** — drag-and-drop or file picker, uploaded to S3 with metadata stored in DynamoDB
-- **File Versioning** — uploading a file with the same name creates a new version; view and download any previous version
-- **File Rename** — renaming a file triggers a Lambda that replicates the S3 object under the new key
-- **File Delete** — deleting a file triggers a Lambda that removes the S3 object
-- **Per-User Isolation** — each user can only see and manage their own files
-
-## Tech Stack
-
-| Layer       | Technology                  |
-|-------------|-----------------------------|
-| Frontend    | React 19, TypeScript, Vite  |
-| Auth        | Amazon Cognito              |
-| Storage     | Amazon S3                   |
-| Database    | Amazon DynamoDB             |
-| Functions   | AWS Lambda (Python 3.12)    |
-| Backend IaC | AWS Amplify Gen 2 (CDK)     |
-| Hosting     | AWS Amplify Hosting         |
-| DNS         | Amazon Route 53             |
-
-## Hosted URL
-
-> **TODO**: Add deployed URL here after hosting is configured.
-
-## Getting Started
+## Local Development
 
 ### Prerequisites
 
 - Node.js 18+
 - npm
-- AWS account with Amplify configured
-- AWS CLI configured with appropriate credentials
+- AWS account with Amplify access
 
-### Local Development
+### Run Locally
 
 ```bash
-# Install dependencies
 npm install
-
-# Start Amplify sandbox (deploys backend to AWS)
 npx ampx sandbox
-
-# In another terminal, start the frontend dev server
 npm run dev
 ```
 
-### Deployment
+## Deployment
 
 ```bash
-# Deploy to production
 npx ampx pipeline-deploy --branch main
 ```
-
-## Project Structure
-
-See [STRUCTURE.md](STRUCTURE.md) for a detailed breakdown of the project structure.

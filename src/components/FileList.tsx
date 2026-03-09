@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { Schema } from '../../amplify/data/resource'
+import ConfirmDialog from './ConfirmDialog'
 import FileItem from './FileItem'
 import FileVersions from './FileVersions'
 import RenameModal from './RenameModal'
+import { useToast } from './ToastProvider'
 import './FileList.css'
 
 const client = generateClient<Schema>()
@@ -16,6 +18,9 @@ function FileList() {
   const [loading, setLoading] = useState(true)
   const [versionsFile, setVersionsFile] = useState<FileRecord | null>(null)
   const [renameFile, setRenameFile] = useState<FileRecord | null>(null)
+  const [deleteFile, setDeleteFile] = useState<FileRecord | null>(null)
+  const [actionBusy, setActionBusy] = useState(false)
+  const { showToast } = useToast()
 
   const loadFiles = useCallback(async () => {
     try {
@@ -38,66 +43,141 @@ function FileList() {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
+
       setFiles(sorted)
     } catch (err) {
       console.error('Failed to load files:', err)
+      showToast('Failed to load files.', 'error')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [showToast])
 
   useEffect(() => {
-    loadFiles()
+    void loadFiles()
 
-    const handleUpload = () => loadFiles()
+    const handleUpload = () => {
+      void loadFiles()
+    }
+
     window.addEventListener('fileUploaded', handleUpload)
     return () => window.removeEventListener('fileUploaded', handleUpload)
   }, [loadFiles])
 
-  const handleDelete = useCallback(
-    async (file: FileRecord) => {
-      if (!confirm(`Delete "${file.fileName}" and all its versions?`)) return
+  const handleDelete = useCallback((file: FileRecord) => {
+    setDeleteFile(file)
+  }, [])
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteFile) {
+      return
+    }
+
+    setActionBusy(true)
+
+    try {
+      const session = await fetchAuthSession()
+      const owner = session.tokens?.idToken?.payload?.sub as string
+
+      const { data: allVersions } = await client.models.FileRecord.list({
+        filter: {
+          fileName: { eq: deleteFile.fileName },
+          owner: { eq: owner },
+        },
+      })
+
+      await Promise.all(
+        allVersions.map((version) => client.models.FileRecord.delete({ id: version.id }))
+      )
+
+      setDeleteFile(null)
+      showToast(`Deleted ${deleteFile.fileName} and its saved versions.`, 'success')
+      await loadFiles()
+    } catch (err) {
+      console.error('Delete failed:', err)
+      showToast('Failed to delete file.', 'error')
+    } finally {
+      setActionBusy(false)
+    }
+  }, [deleteFile, loadFiles, showToast])
+
+  const handleRenameSubmit = useCallback(
+    async (file: FileRecord, newName: string) => {
+      const trimmedName = newName.trim()
+      if (!trimmedName || trimmedName === file.fileName) {
+        return
+      }
+
+      setActionBusy(true)
 
       try {
         const session = await fetchAuthSession()
         const owner = session.tokens?.idToken?.payload?.sub as string
 
-        const { data: allVersions } = await client.models.FileRecord.list({
-          filter: {
-            fileName: { eq: file.fileName },
-            owner: { eq: owner },
-          },
-        })
+        const [{ data: existingTarget }, { data: allVersions }] = await Promise.all([
+          client.models.FileRecord.list({
+            filter: {
+              fileName: { eq: trimmedName },
+              owner: { eq: owner },
+            },
+          }),
+          client.models.FileRecord.list({
+            filter: {
+              fileName: { eq: file.fileName },
+              owner: { eq: owner },
+            },
+          }),
+        ])
+
+        if (existingTarget.length > 0) {
+          showToast(
+            `A file named ${trimmedName} already exists. Choose a different name.`,
+            'error'
+          )
+          return
+        }
 
         await Promise.all(
-          allVersions.map((v) => client.models.FileRecord.delete({ id: v.id }))
+          allVersions.map((version) =>
+            client.models.FileRecord.update({
+              id: version.id,
+              fileName: trimmedName,
+            })
+          )
         )
 
-        loadFiles()
-      } catch (err) {
-        console.error('Delete failed:', err)
-        alert('Failed to delete file.')
-      }
-    },
-    [loadFiles]
-  )
+        if (versionsFile?.fileName === file.fileName) {
+          setVersionsFile({ ...versionsFile, fileName: trimmedName })
+        }
 
-  const handleRenameSubmit = useCallback(
-    async (file: FileRecord, newName: string) => {
-      try {
-        await client.models.FileRecord.update({
-          id: file.id,
-          fileName: newName,
-        })
         setRenameFile(null)
-        loadFiles()
+        showToast(`Renamed ${file.fileName} to ${trimmedName}.`, 'success')
+        await loadFiles()
       } catch (err) {
         console.error('Rename failed:', err)
-        alert('Failed to rename file.')
+        showToast('Failed to rename file.', 'error')
+      } finally {
+        setActionBusy(false)
       }
     },
-    [loadFiles]
+    [loadFiles, showToast, versionsFile]
   )
+
+  const closeDeleteDialog = useCallback(() => {
+    if (actionBusy) {
+      return
+    }
+
+    setDeleteFile(null)
+  }, [actionBusy])
+
+  const closeRenameDialog = useCallback(() => {
+    if (actionBusy) {
+      return
+    }
+
+    setRenameFile(null)
+  }, [actionBusy])
 
   if (loading) {
     return (
@@ -139,7 +219,20 @@ function FileList() {
         <RenameModal
           file={renameFile}
           onRename={handleRenameSubmit}
-          onClose={() => setRenameFile(null)}
+          onClose={closeRenameDialog}
+          busy={actionBusy}
+        />
+      )}
+
+      {deleteFile && (
+        <ConfirmDialog
+          title="Delete file"
+          message={`Delete ${deleteFile.fileName} and every saved version? This cannot be undone.`}
+          confirmLabel="Delete file"
+          tone="danger"
+          busy={actionBusy}
+          onConfirm={confirmDelete}
+          onCancel={closeDeleteDialog}
         />
       )}
     </div>

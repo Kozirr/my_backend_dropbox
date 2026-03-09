@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { generateClient } from 'aws-amplify/data'
-import { getUrl } from 'aws-amplify/storage'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { Schema } from '../../amplify/data/resource'
+import { downloadFile } from '../utils/downloadFile'
+import { useToast } from './ToastProvider'
 import './FileVersions.css'
 
 const client = generateClient<Schema>()
@@ -12,6 +13,18 @@ type FileRecord = Schema['FileRecord']['type']
 interface FileVersionsProps {
   fileName: string
   onClose: () => void
+}
+
+function getVersionFileName(fileName: string, version: number): string {
+  const extensionIndex = fileName.lastIndexOf('.')
+
+  if (extensionIndex <= 0) {
+    return `${fileName}-v${version}`
+  }
+
+  const baseName = fileName.slice(0, extensionIndex)
+  const extension = fileName.slice(extensionIndex)
+  return `${baseName}-v${version}${extension}`
 }
 
 function formatFileSize(bytes: number): string {
@@ -34,6 +47,8 @@ function formatDate(dateStr: string): string {
 function FileVersions({ fileName, onClose }: FileVersionsProps) {
   const [versions, setVersions] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   useEffect(() => {
     async function loadVersions() {
@@ -52,25 +67,29 @@ function FileVersions({ fileName, onClose }: FileVersionsProps) {
         setVersions(sorted)
       } catch (err) {
         console.error('Failed to load versions:', err)
+        showToast('Failed to load file versions.', 'error')
       } finally {
         setLoading(false)
       }
     }
     loadVersions()
-  }, [fileName])
+  }, [fileName, showToast])
 
-  const handleDownload = useCallback(async (s3Key: string) => {
+  const handleDownload = useCallback(async (version: FileRecord) => {
+    setDownloadingId(version.id)
+
     try {
-      const { url } = await getUrl({
-        path: s3Key,
-        options: { expiresIn: 3600 },
+      await downloadFile({
+        path: version.s3Key,
+        fileName: getVersionFileName(version.fileName, version.version),
       })
-      window.open(url.toString(), '_blank')
     } catch (err) {
       console.error('Download failed:', err)
-      alert('Failed to get download link.')
+      showToast(`Failed to download version ${version.version}.`, 'error')
+    } finally {
+      setDownloadingId(null)
     }
-  }, [])
+  }, [showToast])
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -96,10 +115,11 @@ function FileVersions({ fileName, onClose }: FileVersionsProps) {
                   </div>
                   <button
                     className="btn-action btn-download"
-                    onClick={() => handleDownload(v.s3Key)}
+                    onClick={() => handleDownload(v)}
                     title="Download this version"
+                    disabled={downloadingId === v.id}
                   >
-                    ⬇
+                    {downloadingId === v.id ? '…' : '⬇'}
                   </button>
                 </li>
               ))}

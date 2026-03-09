@@ -3,6 +3,7 @@ import { uploadData } from 'aws-amplify/storage'
 import { generateClient } from 'aws-amplify/data'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { Schema } from '../../amplify/data/resource'
+import { useToast } from './ToastProvider'
 import './FileUpload.css'
 
 const client = generateClient<Schema>()
@@ -12,6 +13,7 @@ function FileUpload() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { showToast } = useToast()
 
   const uploadFile = useCallback(async (file: File) => {
     setUploading(true)
@@ -60,15 +62,16 @@ function FileUpload() {
       })
 
       setProgress(100)
+      showToast(`Uploaded ${file.name} as version ${newVersion}.`, 'success')
       window.dispatchEvent(new Event('fileUploaded'))
     } catch (err) {
       console.error('Upload failed:', err)
-      alert('Upload failed. Please try again.')
+      showToast('Upload failed. Please try again.', 'error')
     } finally {
       setUploading(false)
       setProgress(0)
     }
-  }, [])
+  }, [showToast])
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
@@ -126,7 +129,10 @@ function FileUpload() {
         ref={fileInputRef}
         type="file"
         className="file-input-hidden"
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={(e) => {
+          handleFiles(e.target.files)
+          e.target.value = ''
+        }}
       />
     </div>
   )

@@ -15,6 +15,12 @@
   font-weight: 500;
 }
 
+.rename-help-text {
+  color: #8b949e;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .rename-input {
   width: 100%;
   padding: 0.6em 0.75em;
