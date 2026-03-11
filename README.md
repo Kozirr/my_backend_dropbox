@@ -1,6 +1,6 @@
-# Northstar Drive
+# Dropbox Clone
 
-Northstar Drive is a Dropbox-inspired file manager built with React and AWS Amplify Gen 2. It provides authenticated personal storage, versioned uploads, folder navigation, profile editing, file preview, secure public share links with expiration, and a cloud-hosted web interface.
+Dropbox Clone is a Dropbox-inspired file manager built with React and AWS Amplify Gen 2. It provides authenticated personal storage, versioned uploads, folder navigation, profile editing, file preview, secure public share links with expiration, and a cloud-hosted web interface.
 
 ## Hosted Application
 
