@@ -24,6 +24,20 @@ function json(statusCode: number, body: unknown) {
   };
 }
 
+function redirect(location: string) {
+  return {
+    statusCode: 302,
+    headers: {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET,OPTIONS",
+      "access-control-allow-headers": "content-type",
+      "cache-control": "no-store",
+      location,
+    },
+    body: "",
+  };
+}
+
 export const handler: Handler = async (event) => {
   if (event.requestContext?.http?.method === "OPTIONS") {
     return json(204, {});
@@ -35,6 +49,7 @@ export const handler: Handler = async (event) => {
   }
 
   const token = event.pathParameters?.token ?? event.queryStringParameters?.token;
+  const mode = event.queryStringParameters?.mode;
 
   if (!token) {
     return json(400, { message: "Missing share token." });
@@ -84,6 +99,10 @@ export const handler: Handler = async (event) => {
       }),
       { expiresIn: 300 }
     );
+
+    if (mode === "redirect") {
+      return redirect(downloadUrl);
+    }
 
     return json(200, {
       fileName: link.fileName,

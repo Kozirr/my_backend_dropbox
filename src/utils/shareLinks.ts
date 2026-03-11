@@ -32,3 +32,20 @@ export function getShareResolverUrl() {
     return ''
   }
 }
+
+export function buildShareResolverRequestUrl(token: string, mode?: 'json' | 'redirect') {
+  const resolverUrl = getShareResolverUrl()
+
+  if (!resolverUrl) {
+    return ''
+  }
+
+  const requestUrl = new URL(resolverUrl)
+  requestUrl.searchParams.set('token', token)
+
+  if (mode === 'redirect') {
+    requestUrl.searchParams.set('mode', 'redirect')
+  }
+
+  return requestUrl.toString()
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getShareResolverUrl } from '../utils/shareLinks'
+import { buildShareResolverRequestUrl, getShareResolverUrl } from '../utils/shareLinks'
 import './SharedFilePage.css'
 
 interface SharedFilePayload {
@@ -27,6 +27,7 @@ function SharedFilePage() {
   const [payload, setPayload] = useState<SharedFilePayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [directOpenUrl, setDirectOpenUrl] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -48,8 +49,7 @@ function SharedFilePage() {
       }
 
       try {
-        const requestUrl = new URL(resolverUrl)
-        requestUrl.searchParams.set('token', token)
+        const requestUrl = buildShareResolverRequestUrl(token)
 
         const response = await fetch(requestUrl, {
           headers: {
@@ -72,8 +72,16 @@ function SharedFilePage() {
         console.error('Failed to open share link', loadError)
         if (!cancelled) {
           if (loadError instanceof TypeError) {
+            const redirectUrl = buildShareResolverRequestUrl(token, 'redirect')
+            setDirectOpenUrl(redirectUrl)
+
+            if (redirectUrl) {
+              window.location.assign(redirectUrl)
+              return
+            }
+
             setError(
-              'Unable to reach the share service. If the backend was redeployed, regenerate amplify_outputs.json and rebuild the frontend.'
+              'Unable to reach the share service from this page. Use the direct open link below to continue.'
             )
             return
           }
@@ -109,6 +117,14 @@ function SharedFilePage() {
 
         {loading ? <p>Loading link...</p> : null}
         {!loading && error ? <p className="shared-error">{error}</p> : null}
+
+        {!loading && directOpenUrl ? (
+          <div className="shared-actions">
+            <a className="shared-download" href={directOpenUrl}>
+              Open shared file directly
+            </a>
+          </div>
+        ) : null}
 
         {!loading && payload ? (
           <>
