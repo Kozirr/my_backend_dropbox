@@ -4,8 +4,15 @@ import { data } from "./data/resource";
 import { storage } from "./storage/resource";
 import { onDeleteRecord } from "./functions/onDeleteRecord/resource";
 import { onRenameFile } from "./functions/onRenameFile/resource";
+import { resolveShareLink } from "./functions/resolveShareLink/resource";
 import { StreamViewType } from "aws-cdk-lib/aws-dynamodb";
-import { StartingPosition, EventSourceMapping, Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
+import {
+  StartingPosition,
+  EventSourceMapping,
+  Function as LambdaFunction,
+  FunctionUrlAuthType,
+  HttpMethod,
+} from "aws-cdk-lib/aws-lambda";
 import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 const backend = defineBackend({
@@ -14,12 +21,14 @@ const backend = defineBackend({
   storage,
   onDeleteRecord,
   onRenameFile,
+  resolveShareLink,
 });
 
 const s3BucketName = backend.storage.resources.bucket.bucketName;
 
 const fileRecordTable = backend.data.resources.tables["FileRecord"];
 const fileRecordTableResource = backend.data.resources.cfnResources.amplifyDynamoDbTables["FileRecord"];
+const shareLinkTable = backend.data.resources.tables["ShareLink"];
 
 fileRecordTableResource.streamSpecification = {
   streamViewType: StreamViewType.NEW_AND_OLD_IMAGES,
@@ -30,10 +39,13 @@ const tableName = fileRecordTable.tableName;
 
 const deleteFn = backend.onDeleteRecord.resources.lambda as LambdaFunction;
 const renameFn = backend.onRenameFile.resources.lambda as LambdaFunction;
+const resolveShareLinkFn = backend.resolveShareLink.resources.lambda as LambdaFunction;
 
 deleteFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
 renameFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
 renameFn.addEnvironment("FILERECORD_TABLE_NAME", tableName);
+resolveShareLinkFn.addEnvironment("STORAGE_BUCKET_NAME", s3BucketName);
+resolveShareLinkFn.addEnvironment("SHARELINK_TABLE_NAME", shareLinkTable.tableName);
 
 const lambdaStack = backend.createStack("LambdaPermissions");
 
@@ -62,6 +74,21 @@ const renameS3DynamoPolicy = new Policy(lambdaStack, "RenameS3DynamoPolicy", {
 });
 
 renameFn.role!.attachInlinePolicy(renameS3DynamoPolicy);
+
+const resolveSharePolicy = new Policy(lambdaStack, "ResolveSharePolicy", {
+  statements: [
+    new PolicyStatement({
+      actions: ["s3:GetObject"],
+      resources: [backend.storage.resources.bucket.arnForObjects("*")],
+    }),
+    new PolicyStatement({
+      actions: ["dynamodb:GetItem"],
+      resources: [shareLinkTable.tableArn],
+    }),
+  ],
+});
+
+resolveShareLinkFn.role!.attachInlinePolicy(resolveSharePolicy);
 
 const deleteRecordStream = new EventSourceMapping(lambdaStack, "DeleteRecordStream", {
   target: deleteFn,
@@ -103,3 +130,18 @@ renameFn.role!.attachInlinePolicy(renameStreamReadPolicy);
 
 deleteRecordStream.node.addDependency(deleteStreamReadPolicy);
 renameFileStream.node.addDependency(renameStreamReadPolicy);
+
+const resolveShareUrl = resolveShareLinkFn.addFunctionUrl({
+  authType: FunctionUrlAuthType.NONE,
+  cors: {
+    allowedHeaders: ["content-type"],
+    allowedMethods: [HttpMethod.ALL],
+    allowedOrigins: ["*"],
+  },
+});
+
+backend.addOutput({
+  custom: {
+    shareResolverUrl: resolveShareUrl.url,
+  },
+});

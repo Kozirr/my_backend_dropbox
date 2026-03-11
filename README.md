@@ -1,63 +1,87 @@
-# Serverless Dropbox Clone
+# Northstar Drive
 
-A serverless file management app built on AWS. Authenticated users can upload files, view version history, rename files, delete files, and download stored versions through a hosted web interface.
+Northstar Drive is a Dropbox-inspired file manager built with React and AWS Amplify Gen 2. It provides authenticated personal storage, versioned uploads, folder navigation, profile editing, file preview, secure public share links with expiration, and a cloud-hosted web interface.
 
-## Deployed URL
+## Hosted Application
+
+The project is hosted in the cloud at:
 
 https://www.meow.theyka.net/
 
-## What Users Can Do
+This URL is the submission URL and should remain available during correction.
 
-- Sign up and sign in with email-based authentication
-- Upload files to private user storage
-- View current files and past versions
-- Rename files while keeping the full version history grouped together
-- Delete files and their stored objects
-- Download the current file or any saved version directly from the app
+## Project Overview
 
-## Stack
+The application combines a React frontend with Amplify-managed AWS services:
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 19, TypeScript, Vite |
-| Backend IaC | AWS Amplify Gen 2 |
-| Authentication | Amazon Cognito |
-| File storage | Amazon S3 |
-| Metadata | Amazon DynamoDB |
-| Background processing | AWS Lambda |
-| Hosting | AWS Amplify Hosting |
-| DNS | Amazon Route 53 |
+- Amazon Cognito for user authentication
+- Amazon S3 for private file storage
+- Amazon DynamoDB for file, folder, profile, and share-link metadata
+- AWS Lambda for background workflows and public share resolution
+- AWS Amplify Hosting for the deployed frontend
+- Amazon Route 53 for the custom domain configuration
 
-## Architecture
+## Features
 
-- The frontend is hosted with AWS Amplify Hosting.
-- Authentication is handled by Amazon Cognito.
-- File binaries are stored in Amazon S3.
-- File metadata and version information are stored in Amazon DynamoDB.
-- Lambda functions react to DynamoDB stream events for file-delete and file-rename workflows.
-- Renaming updates every version record for the file, and the rename Lambda keeps the S3 object keys aligned with the new filename.
-- The public domain `www.meow.theyka.net` is configured in Amazon Route 53.
+- Email-based sign up and sign in
+- File upload with version history
+- Folder creation and navigation
+- File rename and deletion
+- File preview for images, text files, and PDFs
+- Profile page with editable persisted user information
+- Secure share links with expiration dates
+- Public share route for opening shared files
+- Responsive Dropbox-style interface
 
-Route 53 is part of the deployed architecture, but the DNS records are configured outside this repository. This repository does not provision Route 53 resources directly.
+## Repository Rules
+
+- React components live in `src/components/`
+- Each component has its own file
+- Component CSS is stored in the matching `ComponentName.css` file when styling is needed
+- `node_modules/` and build artifacts are ignored by `.gitignore`
 
 ## Local Development
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm
 - AWS account with Amplify access
 
-### Run Locally
+### Install dependencies
 
 ```bash
 npm install
+```
+
+### Start a local Amplify sandbox
+
+```bash
 npx ampx sandbox
+```
+
+### Run the frontend
+
+```bash
 npm run dev
+```
+
+## Validation
+
+The project has been validated locally with:
+
+```bash
+npm run lint
+npm run build
+npx tsc -p tsconfig.amplify.json
 ```
 
 ## Deployment
 
+Deploy the application with Amplify Hosting:
+
 ```bash
 npx ampx pipeline-deploy --branch main
 ```
+
+After deployment, refresh `amplify_outputs.json` so the frontend receives the latest backend outputs, including the public share resolver URL.

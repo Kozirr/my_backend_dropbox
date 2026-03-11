@@ -3,7 +3,7 @@ import { generateClient } from 'aws-amplify/data'
 import { fetchAuthSession } from 'aws-amplify/auth'
 import type { Schema } from '../../amplify/data/resource'
 import { downloadFile } from '../utils/downloadFile'
-import { useToast } from './ToastProvider'
+import { useToast } from './toastContext'
 import './FileVersions.css'
 
 const client = generateClient<Schema>()

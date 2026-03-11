@@ -1,17 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
 import { generateClient } from 'aws-amplify/data'
-import { fetchAuthSession } from 'aws-amplify/auth'
 import type { Schema } from '../../amplify/data/resource'
 import ConfirmDialog from './ConfirmDialog'
 import FileItem from './FileItem'
+import FilePreviewModal from './FilePreviewModal'
 import FileVersions from './FileVersions'
 import RenameModal from './RenameModal'
-import { useToast } from './ToastProvider'
+import ShareModal from './ShareModal'
+import { getCurrentUserContext } from '../utils/authSession'
+import { useToast } from './toastContext'
 import './FileList.css'
 
 const client = generateClient<Schema>()
 
 type FileRecord = Schema['FileRecord']['type']
+
+interface FileListProps {
+  activeFolderId?: string | null
+}
 
 function getGroupKey(file: FileRecord) {
   return file.logicalFileId ?? `legacy:${file.owner}:${file.fileName}`
@@ -35,23 +41,27 @@ async function listVersionsForFile(file: FileRecord, owner: string) {
   })
 }
 
-function FileList() {
+async function listOwnerFiles(owner: string) {
+  return client.models.FileRecord.list({
+    filter: { owner: { eq: owner } },
+  })
+}
+
+function FileList({ activeFolderId = null }: FileListProps) {
   const [files, setFiles] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [versionsFile, setVersionsFile] = useState<FileRecord | null>(null)
   const [renameFile, setRenameFile] = useState<FileRecord | null>(null)
   const [deleteFile, setDeleteFile] = useState<FileRecord | null>(null)
+  const [previewFile, setPreviewFile] = useState<FileRecord | null>(null)
+  const [shareFile, setShareFile] = useState<FileRecord | null>(null)
   const [actionBusy, setActionBusy] = useState(false)
   const { showToast } = useToast()
 
   const loadFiles = useCallback(async () => {
     try {
-      const session = await fetchAuthSession()
-      const owner = session.tokens?.idToken?.payload?.sub as string
-
-      const { data } = await client.models.FileRecord.list({
-        filter: { owner: { eq: owner } },
-      })
+      const { owner } = await getCurrentUserContext()
+      const { data } = await listOwnerFiles(owner)
 
       const latestByGroup = new Map<string, FileRecord>()
       for (const file of data) {
@@ -62,7 +72,11 @@ function FileList() {
         }
       }
 
-      const sorted = Array.from(latestByGroup.values()).sort(
+      const filtered = Array.from(latestByGroup.values()).filter(
+        (file) => (file.folderId ?? null) === activeFolderId
+      )
+
+      const sorted = filtered.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
@@ -74,7 +88,7 @@ function FileList() {
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [activeFolderId, showToast])
 
   useEffect(() => {
     void loadFiles()
@@ -99,8 +113,7 @@ function FileList() {
     setActionBusy(true)
 
     try {
-      const session = await fetchAuthSession()
-      const owner = session.tokens?.idToken?.payload?.sub as string
+      const { owner } = await getCurrentUserContext()
 
       const { data: allVersions } = await listVersionsForFile(deleteFile, owner)
 
@@ -131,24 +144,21 @@ function FileList() {
       let originalVersions: FileRecord[] = []
 
       try {
-        const session = await fetchAuthSession()
-        owner = session.tokens?.idToken?.payload?.sub as string
+        owner = (await getCurrentUserContext()).owner
         const currentGroupKey = getGroupKey(file)
 
-        const [{ data: existingTarget }, { data: allVersions }] = await Promise.all([
-          client.models.FileRecord.list({
-            filter: {
-              fileName: { eq: trimmedName },
-              owner: { eq: owner },
-            },
-          }),
+        const [{ data: ownerFiles }, { data: allVersions }] = await Promise.all([
+          listOwnerFiles(owner),
           listVersionsForFile(file, owner),
         ])
 
         originalVersions = allVersions
 
-        const conflictingTarget = existingTarget.find(
-          (targetRecord) => getGroupKey(targetRecord) !== currentGroupKey
+        const conflictingTarget = ownerFiles.find(
+          (targetRecord) =>
+            targetRecord.fileName === trimmedName &&
+            (targetRecord.folderId ?? null) === (file.folderId ?? null) &&
+            getGroupKey(targetRecord) !== currentGroupKey
         )
 
         if (conflictingTarget) {
@@ -181,21 +191,14 @@ function FileList() {
         console.error('Rename failed:', err)
 
         if (owner && originalVersions.length > 0) {
-          const { data: currentVersions } = await listVersionsForFile(file, owner)
-
           await Promise.all(
-            currentVersions.map((version) => {
-              const originalVersion = originalVersions.find((item) => item.id === version.id)
-              if (!originalVersion) {
-                return Promise.resolve()
-              }
-
-              return client.models.FileRecord.update({
+            originalVersions.map((version) =>
+              client.models.FileRecord.update({
                 id: version.id,
-                fileName: originalVersion.fileName,
-                logicalFileId: originalVersion.logicalFileId ?? undefined,
+                fileName: version.fileName,
+                logicalFileId: version.logicalFileId ?? undefined,
               })
-            })
+            )
           )
         }
 
@@ -236,7 +239,7 @@ function FileList() {
       <h2 className="file-list-title">Your Files</h2>
       {files.length === 0 ? (
         <p className="file-list-empty">
-          No files yet. Upload your first file above!
+          No files in this folder yet. Upload something or create another folder.
         </p>
       ) : (
         <div className="file-list-grid">
@@ -245,11 +248,17 @@ function FileList() {
               key={file.id}
               file={file}
               onDelete={handleDelete}
+              onPreview={() => setPreviewFile(file)}
               onRename={() => setRenameFile(file)}
+              onShare={() => setShareFile(file)}
               onViewVersions={() => setVersionsFile(file)}
             />
           ))}
         </div>
+      )}
+
+      {previewFile && (
+        <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
 
       {versionsFile && (
@@ -266,6 +275,10 @@ function FileList() {
           onClose={closeRenameDialog}
           busy={actionBusy}
         />
+      )}
+
+      {shareFile && (
+        <ShareModal file={shareFile} onClose={() => setShareFile(null)} />
       )}
 
       {deleteFile && (

@@ -1,11 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Public+Sans:wght@400;500;600;700&display=swap');
+
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Public Sans', 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: #e1e4e8;
-  background-color: #0f1117;
+  color: #102033;
+  background-color: #f7f4ec;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -23,10 +24,11 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: #f7f4ec;
 }
 
 a {
-  color: #58a6ff;
+  color: #1e56c5;
   text-decoration: none;
 }
 
@@ -35,24 +37,30 @@ a:hover {
 }
 
 button {
-  border-radius: 6px;
-  border: 1px solid #30363d;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 32, 51, 0.12);
   padding: 0.5em 1em;
   font-size: 0.875rem;
   font-weight: 500;
   font-family: inherit;
-  background-color: #21262d;
-  color: #e1e4e8;
+  background-color: #fff;
+  color: #102033;
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 button:hover {
-  background-color: #30363d;
-  border-color: #484f58;
+  background-color: #f1f5fb;
+  border-color: rgba(16, 32, 51, 0.18);
 }
 
 button:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid #2b6fff;
   outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
 }

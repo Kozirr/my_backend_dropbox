@@ -1,0 +1,40 @@
+.preview-modal {
+  width: min(960px, calc(100vw - 2rem));
+  max-width: 960px;
+}
+
+.preview-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.preview-subtitle {
+  color: #5c6f8d;
+  font-size: 0.88rem;
+  margin-top: 0.25rem;
+}
+
+.preview-image,
+.preview-frame {
+  width: 100%;
+  min-height: 480px;
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.preview-text {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 18px;
+  background: #0f1726;
+  color: #e9eef8;
+}
+
+.preview-placeholder {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #5c6f8d;
+}

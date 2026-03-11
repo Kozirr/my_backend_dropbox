@@ -1,0 +1,21 @@
+import outputs from '../../amplify_outputs.json'
+
+interface CustomOutputs {
+  custom?: {
+    shareResolverUrl?: string
+  }
+}
+
+export function createShareToken() {
+  const randomBytes = crypto.getRandomValues(new Uint8Array(18))
+  const suffix = Array.from(randomBytes, (value) => value.toString(16).padStart(2, '0')).join('')
+  return `${crypto.randomUUID().replace(/-/g, '')}${suffix}`
+}
+
+export function buildPublicShareUrl(token: string) {
+  return new URL(`/shared/${token}`, window.location.origin).toString()
+}
+
+export function getShareResolverUrl() {
+  return (outputs as CustomOutputs).custom?.shareResolverUrl ?? ''
+}

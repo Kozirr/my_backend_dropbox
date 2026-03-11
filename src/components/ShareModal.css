@@ -1,0 +1,48 @@
+.share-modal {
+  max-width: 520px;
+}
+
+.share-modal-body {
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.share-modal-copy,
+.share-expiration-copy {
+  color: #5c6f8d;
+}
+
+.share-select,
+.share-url {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 32, 51, 0.12);
+  background: #f8fbff;
+}
+
+.share-result {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.share-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.share-open-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.95rem;
+  border-radius: 10px;
+  background: #102033;
+  color: #fff;
+}
+
+.share-open-link:hover {
+  text-decoration: none;
+}

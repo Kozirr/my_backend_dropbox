@@ -1,18 +1,22 @@
 import { useState, useRef, useCallback } from 'react'
 import { uploadData } from 'aws-amplify/storage'
 import { generateClient } from 'aws-amplify/data'
-import { fetchAuthSession } from 'aws-amplify/auth'
 import type { Schema } from '../../amplify/data/resource'
-import { useToast } from './ToastProvider'
+import { getCurrentUserContext } from '../utils/authSession'
+import { useToast } from './toastContext'
 import './FileUpload.css'
 
 const client = generateClient<Schema>()
+
+interface FileUploadProps {
+  activeFolderId?: string | null
+}
 
 function sortByVersionDesc<T extends { version: number }>(records: T[]) {
   return [...records].sort((left, right) => right.version - left.version)
 }
 
-function FileUpload() {
+function FileUpload({ activeFolderId = null }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -24,16 +28,19 @@ function FileUpload() {
     setProgress(0)
 
     try {
-      const session = await fetchAuthSession()
-      const identityId = session.identityId!
-      const owner = session.tokens?.idToken?.payload?.sub as string
+      const { identityId, owner } = await getCurrentUserContext()
 
-      const { data: existingFiles } = await client.models.FileRecord.list({
+      const { data: ownerFiles } = await client.models.FileRecord.list({
         filter: {
-          fileName: { eq: file.name },
           owner: { eq: owner },
         },
       })
+
+      const existingFiles = ownerFiles.filter(
+        (existingFile) =>
+          existingFile.fileName === file.name &&
+          (existingFile.folderId ?? null) === activeFolderId
+      )
 
       const sortedExistingFiles = sortByVersionDesc(existingFiles)
       const latestRecord = sortedExistingFiles[0]
@@ -72,6 +79,7 @@ function FileUpload() {
 
       await client.models.FileRecord.create({
         fileName: file.name,
+        folderId: activeFolderId ?? undefined,
         logicalFileId,
         s3Key: s3Path,
         fileSize: file.size,
@@ -90,7 +98,7 @@ function FileUpload() {
       setUploading(false)
       setProgress(0)
     }
-  }, [showToast])
+  }, [activeFolderId, showToast])
 
   const handleFiles = useCallback(
     (files: FileList | null) => {

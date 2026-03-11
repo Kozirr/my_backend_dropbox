@@ -1,24 +1,25 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(12, 20, 33, 0.42);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 100;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(8px);
 }
 
 .modal-content {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  border-radius: 24px;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 24px 60px rgba(24, 40, 70, 0.22);
 }
 
 .modal-header {
@@ -26,20 +27,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #21262d;
+  border-bottom: 1px solid rgba(16, 32, 51, 0.08);
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #e1e4e8;
+  color: #102033;
 }
 
 .modal-close {
   background: transparent;
   border: none;
-  color: #8b949e;
+  color: #5c6f8d;
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0.25em;
@@ -47,7 +48,7 @@
 }
 
 .modal-close:hover {
-  color: #e1e4e8;
+  color: #102033;
 }
 
 .modal-body {
@@ -57,7 +58,7 @@
 
 .versions-loading,
 .versions-empty {
-  color: #8b949e;
+  color: #5c6f8d;
   text-align: center;
   padding: 1rem;
 }
@@ -76,9 +77,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: #0d1117;
-  border: 1px solid #21262d;
-  border-radius: 8px;
+  background: #f8fbff;
+  border: 1px solid rgba(16, 32, 51, 0.08);
+  border-radius: 16px;
 }
 
 .version-info {
@@ -89,11 +90,11 @@
 
 .version-label {
   font-weight: 600;
-  color: #58a6ff;
+  color: #1e56c5;
   font-size: 0.9rem;
 }
 
 .version-meta {
   font-size: 0.78rem;
-  color: #8b949e;
+  color: #5c6f8d;
 }

@@ -1,21 +1,42 @@
+import { NavLink } from 'react-router-dom'
 import './Header.css'
 
 interface HeaderProps {
   email: string
+  displayName?: string
   onSignOut: () => void
 }
 
-function Header({ email, onSignOut }: HeaderProps) {
+function Header({ email, displayName, onSignOut }: HeaderProps) {
   return (
     <header className="header">
       <div className="header-brand">
-        <span className="header-logo">☁</span>
-        <h1 className="header-title">DropBox Clone</h1>
+        <div>
+          <span className="header-kicker">Workspace</span>
+          <h1 className="header-title">Northstar Drive</h1>
+        </div>
       </div>
+      <nav className="header-nav" aria-label="Primary">
+        <NavLink
+          to="/files"
+          className={({ isActive }) => `header-link ${isActive ? 'header-link-active' : ''}`}
+        >
+          Files
+        </NavLink>
+        <NavLink
+          to="/profile"
+          className={({ isActive }) => `header-link ${isActive ? 'header-link-active' : ''}`}
+        >
+          Profile
+        </NavLink>
+      </nav>
       <div className="header-user">
-        <span className="header-email">{email}</span>
+        <div className="header-user-copy">
+          <span className="header-name">{displayName || 'Your workspace'}</span>
+          <span className="header-email">{email}</span>
+        </div>
         <button className="header-signout" onClick={onSignOut}>
-          Sign Out
+          Sign out
         </button>
       </div>
     </header>

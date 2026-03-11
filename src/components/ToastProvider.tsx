@@ -1,27 +1,18 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from 'react'
+import { ToastContext, type ToastVariant } from './toastContext'
 import './ToastProvider.css'
-
-type ToastVariant = 'success' | 'error' | 'info'
 
 interface ToastEntry {
   id: number
   message: string
   variant: ToastVariant
 }
-
-interface ToastContextValue {
-  showToast: (message: string, variant?: ToastVariant) => void
-}
-
-const ToastContext = createContext<ToastContextValue | null>(null)
 
 interface ToastProviderProps {
   children: ReactNode
@@ -66,16 +57,6 @@ function ToastProvider({ children }: ToastProviderProps) {
       </div>
     </ToastContext.Provider>
   )
-}
-
-export function useToast() {
-  const context = useContext(ToastContext)
-
-  if (!context) {
-    throw new Error('useToast must be used within ToastProvider')
-  }
-
-  return context
 }
 
 export default ToastProvider

@@ -1,0 +1,71 @@
+.shared-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(33, 106, 255, 0.16), transparent 24%),
+    linear-gradient(180deg, #f7f4ec 0%, #eef4fb 100%);
+}
+
+.shared-card {
+  width: min(880px, 100%);
+  padding: 1.6rem;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(28, 45, 82, 0.08);
+  box-shadow: 0 18px 50px rgba(31, 48, 78, 0.12);
+}
+
+.shared-kicker {
+  margin-bottom: 0.55rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6f7f98;
+}
+
+.shared-meta,
+.shared-error {
+  margin-top: 0.85rem;
+  color: #5c6f8d;
+}
+
+.shared-preview-image,
+.shared-preview-frame {
+  width: 100%;
+  min-height: 460px;
+  margin-top: 1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(16, 32, 51, 0.1);
+  background: #fff;
+}
+
+.shared-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.shared-download,
+.shared-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+}
+
+.shared-download {
+  background: #102033;
+  color: #fff;
+}
+
+.shared-home-link {
+  background: rgba(43, 111, 255, 0.08);
+}
+
+.shared-download:hover,
+.shared-home-link:hover {
+  text-decoration: none;
+}
