@@ -3,6 +3,7 @@ import { generateClient } from 'aws-amplify/data'
 import { useSearchParams } from 'react-router-dom'
 import type { Schema } from '../../amplify/data/resource'
 import { getCurrentUserContext } from '../utils/authSession'
+import ConfirmDialog from './ConfirmDialog'
 import FileList from './FileList'
 import FileUpload from './FileUpload'
 import { useToast } from './toastContext'
@@ -11,9 +12,28 @@ import './FilesPage.css'
 const client = generateClient<Schema>()
 
 type Folder = Schema['Folder']['type']
+type FileRecord = Schema['FileRecord']['type']
 
 function sortFolders(left: Folder, right: Folder) {
   return left.name.localeCompare(right.name)
+}
+
+function collectDescendantFolders(rootFolderId: string, folderMap: Map<string, Folder>) {
+  const descendants: Folder[] = []
+  const stack = [rootFolderId]
+
+  while (stack.length > 0) {
+    const currentId = stack.pop()!
+
+    for (const folder of folderMap.values()) {
+      if (folder.parentFolderId === currentId) {
+        descendants.push(folder)
+        stack.push(folder.id)
+      }
+    }
+  }
+
+  return descendants
 }
 
 function FilesPage() {
@@ -22,6 +42,9 @@ function FilesPage() {
   const [loading, setLoading] = useState(true)
   const [folderName, setFolderName] = useState('')
   const [creatingFolder, setCreatingFolder] = useState(false)
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null)
+  const [folderDeleteBusy, setFolderDeleteBusy] = useState(false)
+  const [fileListRefreshToken, setFileListRefreshToken] = useState(0)
   const { showToast } = useToast()
 
   const activeFolderId = searchParams.get('folder')
@@ -82,6 +105,15 @@ function FilesPage() {
     [activeFolderId, folders]
   )
 
+  const listOwnerFiles = useCallback(async (): Promise<FileRecord[]> => {
+    const { owner } = await getCurrentUserContext()
+    const { data } = await client.models.FileRecord.list({
+      filter: { owner: { eq: owner } },
+    })
+
+    return data
+  }, [])
+
   const handleCreateFolder = useCallback(async () => {
     const trimmedName = folderName.trim()
     if (!trimmedName || creatingFolder) {
@@ -130,11 +162,81 @@ function FilesPage() {
     [setSearchParams]
   )
 
+  const handleDeleteFolder = useCallback(async () => {
+    if (!folderToDelete || folderDeleteBusy) {
+      return
+    }
+
+    setFolderDeleteBusy(true)
+
+    try {
+      const descendants = collectDescendantFolders(folderToDelete.id, folderMap)
+      const folderIdsToDelete = new Set<string>([folderToDelete.id, ...descendants.map((folder) => folder.id)])
+      const ownerFiles = await listOwnerFiles()
+      const filesInFolders = ownerFiles.filter((file) =>
+        file.folderId ? folderIdsToDelete.has(file.folderId) : false
+      )
+
+      await Promise.all(filesInFolders.map((file) => client.models.FileRecord.delete({ id: file.id })))
+
+      const depthByFolderId = new Map<string, number>()
+      for (const folder of descendants) {
+        let depth = 0
+        let cursor: Folder | undefined = folder
+
+        while (cursor?.parentFolderId && folderIdsToDelete.has(cursor.parentFolderId)) {
+          depth += 1
+          cursor = folderMap.get(cursor.parentFolderId)
+        }
+
+        depthByFolderId.set(folder.id, depth)
+      }
+
+      const foldersByDepth = [...descendants].sort(
+        (left, right) => (depthByFolderId.get(right.id) ?? 0) - (depthByFolderId.get(left.id) ?? 0)
+      )
+
+      for (const folder of foldersByDepth) {
+        await client.models.Folder.delete({ id: folder.id })
+      }
+
+      await client.models.Folder.delete({ id: folderToDelete.id })
+
+      if (activeFolderId && folderIdsToDelete.has(activeFolderId)) {
+        openFolder(null)
+      }
+
+      setFolderToDelete(null)
+      setFileListRefreshToken((current) => current + 1)
+      await loadFolders()
+
+      const deletedFileCount = filesInFolders.length
+      const deletedFolderCount = descendants.length + 1
+      showToast(
+        `Deleted ${deletedFolderCount} folder${deletedFolderCount === 1 ? '' : 's'} and ${deletedFileCount} file${deletedFileCount === 1 ? '' : 's'}.`,
+        'success'
+      )
+    } catch (error) {
+      console.error('Failed to delete folder tree', error)
+      showToast('Failed to delete folder.', 'error')
+    } finally {
+      setFolderDeleteBusy(false)
+    }
+  }, [activeFolderId, folderDeleteBusy, folderMap, folderToDelete, listOwnerFiles, loadFolders, openFolder, showToast])
+
+  const closeFolderDeleteDialog = useCallback(() => {
+    if (folderDeleteBusy) {
+      return
+    }
+
+    setFolderToDelete(null)
+  }, [folderDeleteBusy])
+
   return (
     <section className="files-page">
       <aside className="files-sidebar">
         <div className="sidebar-card">
-          <p className="sidebar-label">Spaces</p>
+          <p className="sidebar-label">Folders</p>
           <button
             type="button"
             className={`folder-link ${activeFolderId ? '' : 'folder-link-active'}`}
@@ -162,13 +264,30 @@ function FilesPage() {
           )}
         </div>
 
+        {activeFolder && (
+          <div className="sidebar-card">
+            <p className="sidebar-label">Current folder</p>
+            <strong className="sidebar-current-folder">{activeFolder.name}</strong>
+            <p className="sidebar-helper-copy">
+              Deleting this folder will also delete every nested folder and file inside it.
+            </p>
+            <button
+              type="button"
+              className="folder-delete-button"
+              onClick={() => setFolderToDelete(activeFolder)}
+            >
+              Delete folder
+            </button>
+          </div>
+        )}
+
         <div className="sidebar-card">
           <p className="sidebar-label">Create folder</p>
           <input
             className="folder-input"
             value={folderName}
             onChange={(event) => setFolderName(event.target.value)}
-            placeholder="Sprint files"
+            placeholder="Folder name"
             maxLength={80}
           />
           <button type="button" className="folder-create-button" onClick={handleCreateFolder}>
@@ -178,29 +297,31 @@ function FilesPage() {
       </aside>
 
       <div className="files-content">
-        <div className="files-hero">
-          <div>
-            <p className="files-kicker">Dropbox-style workspace</p>
-            <h2>{activeFolder?.name ?? 'All files'}</h2>
-            <div className="files-breadcrumbs">
-              <button type="button" className="crumb-button" onClick={() => openFolder(null)}>
-                Home
+        <div className="files-header">
+          <div className="files-breadcrumbs">
+            <button type="button" className="crumb-button" onClick={() => openFolder(null)}>
+              Home
+            </button>
+            {breadcrumbFolders.map((folder) => (
+              <button
+                key={folder.id}
+                type="button"
+                className="crumb-button"
+                onClick={() => openFolder(folder.id)}
+              >
+                {folder.name}
               </button>
-              {breadcrumbFolders.map((folder) => (
-                <button
-                  key={folder.id}
-                  type="button"
-                  className="crumb-button"
-                  onClick={() => openFolder(folder.id)}
-                >
-                  {folder.name}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
-          <div className="files-chip-stack">
-            <span className="files-chip">Folders: {folders.length}</span>
-            <span className="files-chip">Children here: {childFolders.length}</span>
+          <div className="files-title-row">
+            <div>
+              <p className="files-kicker">Files</p>
+              <h2>{activeFolder?.name ?? 'All files'}</h2>
+            </div>
+            <p className="files-summary">
+              {folders.length} folder{folders.length === 1 ? '' : 's'} total · {childFolders.length}{' '}
+              visible here
+            </p>
           </div>
         </div>
 
@@ -225,8 +346,27 @@ function FilesPage() {
           </section>
         )}
 
-        <FileUpload activeFolderId={activeFolderId} />
-        <FileList activeFolderId={activeFolderId} />
+        <section className="files-section">
+          <h2 className="file-list-title">Your Files</h2>
+          <FileUpload activeFolderId={activeFolderId} />
+          <FileList
+            activeFolderId={activeFolderId}
+            refreshToken={fileListRefreshToken}
+            showTitle={false}
+          />
+        </section>
+
+        {folderToDelete && (
+          <ConfirmDialog
+            title="Delete folder"
+            message={`Delete ${folderToDelete.name}, every nested folder, and every file inside them? This cannot be undone.`}
+            confirmLabel="Delete folder"
+            tone="danger"
+            busy={folderDeleteBusy}
+            onConfirm={handleDeleteFolder}
+            onCancel={closeFolderDeleteDialog}
+          />
+        )}
       </div>
     </section>
   )

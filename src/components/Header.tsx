@@ -13,7 +13,7 @@ function Header({ email, displayName, onSignOut }: HeaderProps) {
       <div className="header-brand">
         <div>
           <span className="header-kicker">Workspace</span>
-          <h1 className="header-title">Northstar Drive</h1>
+          <h1 className="header-title">Dropbox Clone</h1>
         </div>
       </div>
       <nav className="header-nav" aria-label="Primary">

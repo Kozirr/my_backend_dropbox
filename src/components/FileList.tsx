@@ -17,6 +17,8 @@ type FileRecord = Schema['FileRecord']['type']
 
 interface FileListProps {
   activeFolderId?: string | null
+  refreshToken?: number
+  showTitle?: boolean
 }
 
 function getGroupKey(file: FileRecord) {
@@ -47,7 +49,7 @@ async function listOwnerFiles(owner: string) {
   })
 }
 
-function FileList({ activeFolderId = null }: FileListProps) {
+function FileList({ activeFolderId = null, refreshToken = 0, showTitle = true }: FileListProps) {
   const [files, setFiles] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [versionsFile, setVersionsFile] = useState<FileRecord | null>(null)
@@ -99,7 +101,7 @@ function FileList({ activeFolderId = null }: FileListProps) {
 
     window.addEventListener('fileUploaded', handleUpload)
     return () => window.removeEventListener('fileUploaded', handleUpload)
-  }, [loadFiles])
+  }, [loadFiles, refreshToken])
 
   const handleDelete = useCallback((file: FileRecord) => {
     setDeleteFile(file)
@@ -236,7 +238,7 @@ function FileList({ activeFolderId = null }: FileListProps) {
 
   return (
     <div className="file-list">
-      <h2 className="file-list-title">Your Files</h2>
+      {showTitle ? <h2 className="file-list-title">Your Files</h2> : null}
       {files.length === 0 ? (
         <p className="file-list-empty">
           No files in this folder yet. Upload something or create another folder.

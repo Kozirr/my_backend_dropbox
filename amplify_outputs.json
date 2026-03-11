@@ -1,0 +1,459 @@
+{
+	"version": "1.4",
+	"auth": {
+		"aws_region": "eu-central-1",
+		"user_pool_id": "eu-central-1_n9Mke4Hlb",
+		"user_pool_client_id": "2l429q67grll8qroqmb9mmfes6",
+		"identity_pool_id": "eu-central-1:cc6b9251-c749-4551-9c90-66bac416b9aa",
+		"username_attributes": [
+			"email"
+		]
+	},
+	"data": {
+		"url": "https://44clikvnc5hfnck2men6vnfkr4.appsync-api.eu-central-1.amazonaws.com/graphql",
+		"aws_region": "eu-central-1",
+		"default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+		"authorization_types": [
+			"AWS_IAM"
+		],
+		"model_introspection": {
+			"version": 1,
+			"models": {
+				"UserProfile": {
+					"name": "UserProfile",
+					"fields": {
+						"id": {
+							"name": "id",
+							"isArray": false,
+							"type": "ID",
+							"isRequired": true,
+							"attributes": []
+						},
+						"displayName": {
+							"name": "displayName",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"avatarUrl": {
+							"name": "avatarUrl",
+							"isArray": false,
+							"type": "AWSURL",
+							"isRequired": false,
+							"attributes": []
+						},
+						"accentColor": {
+							"name": "accentColor",
+							"isArray": false,
+							"type": "String",
+							"isRequired": false,
+							"attributes": []
+						},
+						"owner": {
+							"name": "owner",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"createdAt": {
+							"name": "createdAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						},
+						"updatedAt": {
+							"name": "updatedAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						}
+					},
+					"syncable": true,
+					"pluralName": "UserProfiles",
+					"attributes": [
+						{
+							"type": "model",
+							"properties": {}
+						},
+						{
+							"type": "auth",
+							"properties": {
+								"rules": [
+									{
+										"provider": "userPools",
+										"ownerField": "owner",
+										"allow": "owner",
+										"identityClaim": "cognito:username",
+										"operations": [
+											"create",
+											"update",
+											"delete",
+											"read"
+										]
+									}
+								]
+							}
+						}
+					],
+					"primaryKeyInfo": {
+						"isCustomPrimaryKey": false,
+						"primaryKeyFieldName": "id",
+						"sortKeyFieldNames": []
+					}
+				},
+				"Folder": {
+					"name": "Folder",
+					"fields": {
+						"id": {
+							"name": "id",
+							"isArray": false,
+							"type": "ID",
+							"isRequired": true,
+							"attributes": []
+						},
+						"name": {
+							"name": "name",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"parentFolderId": {
+							"name": "parentFolderId",
+							"isArray": false,
+							"type": "ID",
+							"isRequired": false,
+							"attributes": []
+						},
+						"owner": {
+							"name": "owner",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"createdAt": {
+							"name": "createdAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						},
+						"updatedAt": {
+							"name": "updatedAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						}
+					},
+					"syncable": true,
+					"pluralName": "Folders",
+					"attributes": [
+						{
+							"type": "model",
+							"properties": {}
+						},
+						{
+							"type": "auth",
+							"properties": {
+								"rules": [
+									{
+										"provider": "userPools",
+										"ownerField": "owner",
+										"allow": "owner",
+										"identityClaim": "cognito:username",
+										"operations": [
+											"create",
+											"update",
+											"delete",
+											"read"
+										]
+									}
+								]
+							}
+						}
+					],
+					"primaryKeyInfo": {
+						"isCustomPrimaryKey": false,
+						"primaryKeyFieldName": "id",
+						"sortKeyFieldNames": []
+					}
+				},
+				"FileRecord": {
+					"name": "FileRecord",
+					"fields": {
+						"id": {
+							"name": "id",
+							"isArray": false,
+							"type": "ID",
+							"isRequired": true,
+							"attributes": []
+						},
+						"fileName": {
+							"name": "fileName",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"folderId": {
+							"name": "folderId",
+							"isArray": false,
+							"type": "ID",
+							"isRequired": false,
+							"attributes": []
+						},
+						"logicalFileId": {
+							"name": "logicalFileId",
+							"isArray": false,
+							"type": "String",
+							"isRequired": false,
+							"attributes": []
+						},
+						"s3Key": {
+							"name": "s3Key",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"fileSize": {
+							"name": "fileSize",
+							"isArray": false,
+							"type": "Int",
+							"isRequired": true,
+							"attributes": []
+						},
+						"contentType": {
+							"name": "contentType",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"version": {
+							"name": "version",
+							"isArray": false,
+							"type": "Int",
+							"isRequired": true,
+							"attributes": []
+						},
+						"owner": {
+							"name": "owner",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"createdAt": {
+							"name": "createdAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						},
+						"updatedAt": {
+							"name": "updatedAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						}
+					},
+					"syncable": true,
+					"pluralName": "FileRecords",
+					"attributes": [
+						{
+							"type": "model",
+							"properties": {}
+						},
+						{
+							"type": "auth",
+							"properties": {
+								"rules": [
+									{
+										"provider": "userPools",
+										"ownerField": "owner",
+										"allow": "owner",
+										"identityClaim": "cognito:username",
+										"operations": [
+											"create",
+											"update",
+											"delete",
+											"read"
+										]
+									}
+								]
+							}
+						}
+					],
+					"primaryKeyInfo": {
+						"isCustomPrimaryKey": false,
+						"primaryKeyFieldName": "id",
+						"sortKeyFieldNames": []
+					}
+				},
+				"ShareLink": {
+					"name": "ShareLink",
+					"fields": {
+						"id": {
+							"name": "id",
+							"isArray": false,
+							"type": "ID",
+							"isRequired": true,
+							"attributes": []
+						},
+						"s3Key": {
+							"name": "s3Key",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"fileName": {
+							"name": "fileName",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"contentType": {
+							"name": "contentType",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"fileSize": {
+							"name": "fileSize",
+							"isArray": false,
+							"type": "Int",
+							"isRequired": true,
+							"attributes": []
+						},
+						"version": {
+							"name": "version",
+							"isArray": false,
+							"type": "Int",
+							"isRequired": true,
+							"attributes": []
+						},
+						"logicalFileId": {
+							"name": "logicalFileId",
+							"isArray": false,
+							"type": "String",
+							"isRequired": false,
+							"attributes": []
+						},
+						"expiresAt": {
+							"name": "expiresAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": true,
+							"attributes": []
+						},
+						"revokedAt": {
+							"name": "revokedAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": []
+						},
+						"owner": {
+							"name": "owner",
+							"isArray": false,
+							"type": "String",
+							"isRequired": true,
+							"attributes": []
+						},
+						"createdAt": {
+							"name": "createdAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						},
+						"updatedAt": {
+							"name": "updatedAt",
+							"isArray": false,
+							"type": "AWSDateTime",
+							"isRequired": false,
+							"attributes": [],
+							"isReadOnly": true
+						}
+					},
+					"syncable": true,
+					"pluralName": "ShareLinks",
+					"attributes": [
+						{
+							"type": "model",
+							"properties": {}
+						},
+						{
+							"type": "auth",
+							"properties": {
+								"rules": [
+									{
+										"provider": "userPools",
+										"ownerField": "owner",
+										"allow": "owner",
+										"identityClaim": "cognito:username",
+										"operations": [
+											"create",
+											"update",
+											"delete",
+											"read"
+										]
+									}
+								]
+							}
+						}
+					],
+					"primaryKeyInfo": {
+						"isCustomPrimaryKey": false,
+						"primaryKeyFieldName": "id",
+						"sortKeyFieldNames": []
+					}
+				}
+			},
+			"enums": {},
+			"nonModels": {}
+		}
+	},
+	"storage": {
+		"aws_region": "eu-central-1",
+		"bucket_name": "amplify-d3ekfm4vmx5ff4-ma-dropboxfilesbucketf84af3-bsydo0zf3v8w",
+		"buckets": [
+			{
+				"name": "dropboxFiles",
+				"bucket_name": "amplify-d3ekfm4vmx5ff4-ma-dropboxfilesbucketf84af3-bsydo0zf3v8w",
+				"aws_region": "eu-central-1",
+				"paths": {
+					"private/{entity_id}/*": {
+						"authenticated": [
+							"get",
+							"list",
+							"write",
+							"delete"
+						]
+					}
+				}
+			}
+		]
+	},
+	"custom": {
+		"shareResolverUrl": "https://5da7pkours2edybmzjdzl6ny540rrzdq.lambda-url.eu-central-1.on.aws/"
+	}
+}

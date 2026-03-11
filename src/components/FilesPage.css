@@ -69,34 +69,54 @@
   color: #fff;
 }
 
+.sidebar-current-folder {
+  display: block;
+  color: #102033;
+  font-size: 1rem;
+}
+
+.sidebar-helper-copy {
+  margin-top: 0.55rem;
+  color: #5c6f8d;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.folder-delete-button {
+  width: 100%;
+  margin-top: 0.85rem;
+  background: #6d1322;
+  color: #fff;
+}
+
 .files-content {
   padding: 1.5rem;
 }
 
-.files-hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-  padding: 1.5rem;
-  border-radius: 26px;
-  background:
-    linear-gradient(135deg, rgba(16, 32, 51, 0.96), rgba(38, 94, 215, 0.9)),
-    #102033;
-  color: #fff;
+.files-header {
+  margin-bottom: 1.5rem;
 }
 
 .files-kicker {
   font-size: 0.78rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.68);
+  color: #6f7f98;
   margin-bottom: 0.45rem;
 }
 
-.files-hero h2 {
+.files-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-top: 0.9rem;
+}
+
+.files-header h2 {
   margin-bottom: 0.8rem;
   font-size: 2rem;
+  color: #102033;
 }
 
 .files-breadcrumbs {
@@ -106,25 +126,15 @@
 }
 
 .crumb-button {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: rgba(43, 111, 255, 0.08);
+  border-color: rgba(43, 111, 255, 0.14);
+  color: #1c469c;
 }
 
-.files-chip-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.files-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.55rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 0.88rem;
+.files-summary {
+  margin: 0;
+  color: #5c6f8d;
+  text-align: right;
 }
 
 .folder-grid-section {
@@ -162,6 +172,10 @@
   color: #6f7f98;
 }
 
+.files-section {
+  margin-top: 1.5rem;
+}
+
 @media (max-width: 980px) {
   .files-page {
     grid-template-columns: 1fr;
@@ -179,12 +193,16 @@
     padding: 1rem;
   }
 
-  .files-hero {
-    padding: 1.1rem;
-    border-radius: 20px;
+  .files-title-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .files-hero h2 {
+  .files-header h2 {
     font-size: 1.55rem;
+  }
+
+  .files-summary {
+    text-align: left;
   }
 }

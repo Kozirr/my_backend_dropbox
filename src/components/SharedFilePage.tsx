@@ -32,16 +32,34 @@ function SharedFilePage() {
     let cancelled = false
 
     async function loadShare() {
+      if (!token) {
+        setError('Missing share token.')
+        setLoading(false)
+        return
+      }
+
       const resolverUrl = getShareResolverUrl()
       if (!resolverUrl) {
-        setError('Share resolver URL is not configured yet. Refresh Amplify outputs after deployment.')
+        setError(
+          'Share links are not configured for this build. Regenerate amplify_outputs.json after deploying Amplify or set VITE_SHARE_RESOLVER_URL.'
+        )
         setLoading(false)
         return
       }
 
       try {
-        const response = await fetch(`${resolverUrl}?token=${encodeURIComponent(token ?? '')}`)
-        const data = await response.json()
+        const requestUrl = new URL(resolverUrl)
+        requestUrl.searchParams.set('token', token)
+
+        const response = await fetch(requestUrl, {
+          headers: {
+            accept: 'application/json',
+          },
+        })
+
+        const data = (await response.json().catch(() => ({}))) as Partial<SharedFilePayload> & {
+          message?: string
+        }
 
         if (!response.ok) {
           throw new Error(data.message ?? 'Unable to open the share link.')
@@ -53,6 +71,13 @@ function SharedFilePage() {
       } catch (loadError) {
         console.error('Failed to open share link', loadError)
         if (!cancelled) {
+          if (loadError instanceof TypeError) {
+            setError(
+              'Unable to reach the share service. If the backend was redeployed, regenerate amplify_outputs.json and rebuild the frontend.'
+            )
+            return
+          }
+
           setError(loadError instanceof Error ? loadError.message : 'Unable to open the share link.')
         }
       } finally {

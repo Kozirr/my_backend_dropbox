@@ -3,5 +3,17 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #0f1117;
+  background:
+    radial-gradient(circle at top left, rgba(43, 111, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, #f7f4ec 0%, #eef4fb 100%);
+}
+
+.auth-wrapper [data-amplify-container] {
+  width: min(460px, calc(100vw - 2rem));
+}
+
+.auth-wrapper [data-amplify-authenticator-container] {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(28, 45, 82, 0.08);
+  box-shadow: 0 18px 50px rgba(31, 48, 78, 0.12);
 }

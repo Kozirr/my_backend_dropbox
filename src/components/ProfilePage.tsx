@@ -16,7 +16,6 @@ function getDefaultDisplayName(email: string) {
 function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [displayName, setDisplayName] = useState('')
-  const [accentColor, setAccentColor] = useState('#2b6fff')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -37,7 +36,6 @@ function ProfilePage() {
           setProfile(existing)
           setEmail(userEmail)
           setDisplayName(existing?.displayName ?? getDefaultDisplayName(userEmail))
-          setAccentColor(existing?.accentColor ?? '#2b6fff')
         }
       } catch (error) {
         console.error('Failed to load profile', error)
@@ -72,12 +70,10 @@ function ProfilePage() {
         await client.models.UserProfile.update({
           id: profile.id,
           displayName: trimmedName,
-          accentColor,
         })
       } else {
         const { data } = await client.models.UserProfile.create({
           displayName: trimmedName,
-          accentColor,
           owner,
         })
         setProfile(data)
@@ -91,7 +87,7 @@ function ProfilePage() {
     } finally {
       setSaving(false)
     }
-  }, [accentColor, displayName, profile, showToast])
+  }, [displayName, profile, showToast])
 
   if (loading) {
     return <div className="profile-page">Loading profile...</div>
@@ -104,11 +100,10 @@ function ProfilePage() {
           <p className="profile-kicker">Account settings</p>
           <h2>Edit your profile</h2>
           <p className="profile-copy">
-            Keep your workspace identity up to date. These values are stored in your app profile
-            and drive the header presentation.
+            Keep your workspace identity up to date.
           </p>
         </div>
-        <div className="profile-avatar" style={{ background: accentColor }}>
+        <div className="profile-avatar">
           {displayName.trim().slice(0, 1).toUpperCase() || 'U'}
         </div>
       </div>
@@ -129,20 +124,6 @@ function ProfilePage() {
           onChange={(event) => setDisplayName(event.target.value)}
           maxLength={80}
         />
-
-        <label className="profile-label" htmlFor="profile-accent-color">
-          Accent color
-        </label>
-        <div className="profile-color-row">
-          <input
-            id="profile-accent-color"
-            type="color"
-            className="profile-color-input"
-            value={accentColor}
-            onChange={(event) => setAccentColor(event.target.value)}
-          />
-          <span className="profile-color-value">{accentColor}</span>
-        </div>
 
         <button type="button" className="profile-save-button" onClick={handleSave}>
           {saving ? 'Saving...' : 'Save profile'}

@@ -17,5 +17,18 @@ export function buildPublicShareUrl(token: string) {
 }
 
 export function getShareResolverUrl() {
-  return (outputs as CustomOutputs).custom?.shareResolverUrl ?? ''
+  const configuredUrl =
+    import.meta.env.VITE_SHARE_RESOLVER_URL?.trim() ||
+    (outputs as CustomOutputs).custom?.shareResolverUrl?.trim() ||
+    ''
+
+  if (!configuredUrl) {
+    return ''
+  }
+
+  try {
+    return new URL(configuredUrl).toString()
+  } catch {
+    return ''
+  }
 }

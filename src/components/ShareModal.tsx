@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
 import { getCurrentUserContext } from '../utils/authSession'
-import { buildPublicShareUrl, createShareToken } from '../utils/shareLinks'
+import { buildPublicShareUrl, createShareToken, getShareResolverUrl } from '../utils/shareLinks'
 import { useToast } from './toastContext'
 import './ShareModal.css'
 
@@ -26,6 +26,7 @@ function ShareModal({ file, onClose }: ShareModalProps) {
   const [creating, setCreating] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
   const { showToast } = useToast()
+  const shareResolverUrl = getShareResolverUrl()
 
   const expiresAt = useMemo(() => {
     const date = new Date()
@@ -34,6 +35,14 @@ function ShareModal({ file, onClose }: ShareModalProps) {
   }, [selectedDays])
 
   async function handleCreateLink() {
+    if (!shareResolverUrl) {
+      showToast(
+        'Sharing is not configured for this build. Regenerate amplify_outputs.json after deploying Amplify or set VITE_SHARE_RESOLVER_URL.',
+        'error'
+      )
+      return
+    }
+
     setCreating(true)
 
     try {
@@ -89,6 +98,12 @@ function ShareModal({ file, onClose }: ShareModalProps) {
             automatically.
           </p>
 
+          {!shareResolverUrl ? (
+            <p className="share-expiration-copy">
+              Sharing is unavailable until this frontend has a valid resolver URL.
+            </p>
+          ) : null}
+
           <label className="rename-label" htmlFor="share-expiration">
             Expiration
           </label>
@@ -120,7 +135,12 @@ function ShareModal({ file, onClose }: ShareModalProps) {
               </div>
             </div>
           ) : (
-            <button type="button" className="btn-rename-submit" onClick={handleCreateLink}>
+            <button
+              type="button"
+              className="btn-rename-submit"
+              onClick={handleCreateLink}
+              disabled={!shareResolverUrl}
+            >
               {creating ? 'Creating...' : 'Generate secure URL'}
             </button>
           )}
