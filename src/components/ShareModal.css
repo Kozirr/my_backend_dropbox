@@ -33,16 +33,31 @@
   gap: 0.6rem;
 }
 
+.share-copy-link-button,
 .share-open-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.55rem 0.95rem;
   border-radius: 10px;
+}
+
+.share-copy-link-button {
+  background: #f4f7fb;
+  border: 1px solid rgba(16, 32, 51, 0.14);
+  color: #23344d;
+}
+
+.share-copy-link-button:hover {
+  background: #e8eef7;
+}
+
+.share-open-link {
   background: #102033;
   color: #fff;
 }
 
+.share-copy-link-button:hover,
 .share-open-link:hover {
   text-decoration: none;
 }

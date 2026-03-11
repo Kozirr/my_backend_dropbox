@@ -126,7 +126,11 @@ function ShareModal({ file, onClose }: ShareModalProps) {
             <div className="share-result">
               <input className="share-url" value={shareUrl} readOnly />
               <div className="share-actions">
-                <button type="button" className="btn-cancel" onClick={handleCopyLink}>
+                <button
+                  type="button"
+                  className="share-copy-link-button"
+                  onClick={handleCopyLink}
+                >
                   Copy link
                 </button>
                 <a className="share-open-link" href={shareUrl} target="_blank" rel="noreferrer">

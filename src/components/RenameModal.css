@@ -46,16 +46,16 @@
 }
 
 .btn-cancel {
-  background: transparent;
-  border: 1px solid #30363d;
-  color: #e1e4e8;
+  background: #f4f7fb;
+  border: 1px solid rgba(16, 32, 51, 0.14);
+  color: #23344d;
   padding: 0.5em 1em;
   border-radius: 6px;
   cursor: pointer;
 }
 
 .btn-cancel:hover {
-  background: #21262d;
+  background: #e8eef7;
 }
 
 .btn-rename-submit {
